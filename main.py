@@ -113,7 +113,7 @@ body { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); font-famil
 <input type="text" name="job_title" class="form-control" placeholder="مثال: فني تبريد، محاسب..." required>
 </div>
 <div class="mb-3">
-<label class="form-label fw-bold">تفصيل تفضيل مكان العمل *</label>
+<label class="form-label fw-bold">مكان العمل المفضل *</label>
 <select name="location_preference" class="form-select" required>
 <option value="" disabled selected>اختر مكان العمل المفضل</option>
 <option value="بيروت">بيروت</option>
@@ -197,19 +197,23 @@ cursor.execute('SELECT id, full_name, phone, email, job_title, location_preferen
 apps = cursor.fetchall()
 conn.close()
 
-rows = ""
+cards = ""
 for app in apps:
-rows += f"""
-<tr>
-<td>{app[0]}</td>
-<td><strong>{app[1]}</strong></td>
-<td><a href="tel:{app[2]}">{app[2]}</a></td>
-<td>{app[4]}</td>
-<td><span class="badge bg-info text-dark">{app[5]}</span></td>
-<td><small>{app[6] or ''}</small></td>
-<td><a href="/uploads/{app[7]}" target="_blank" class="btn btn-sm btn-outline-primary">عرض الـ CV</a></td>
-<td><a href="/admin/delete/{app[0]}" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت تأكد من حذف هذا الطلب؟')">حذف</a></td>
-</tr>
+cards += f"""
+<div class="card mb-3 p-3 bg-dark text-white border-secondary">
+<div class="d-flex justify-content-between align-items-center mb-2">
+<h5 class="mb-0 text-warning">{app[1]}</h5>
+<span class="badge bg-info">{app[4]}</span>
+</div>
+<p class="mb-1"><strong>الهاتف:</strong> <a href="tel:{app[2]}" class="text-light">{app[2]}</a></p>
+<p class="mb-1"><strong>البريد:</strong> {app[3] or 'غير محدد'}</p>
+<p class="mb-1"><strong>المكان المفضل:</strong> {app[5]}</p>
+<p class="mb-2"><small><strong>الخبرة:</strong> {app[6] or 'لا يوجد'}</small></p>
+<div class="d-flex gap-2 mt-2">
+<a href="/uploads/{app[7]}" target="_blank" class="btn btn-sm btn-primary flex-fill">📄 عرض السيرة الذاتية</a>
+<a href="/admin/delete/{app[0]}" class="btn btn-sm btn-danger flex-fill" onclick="return confirm('هل أنت متأكد من حذف هذا الطلب؟')">🗑️ حذف</a>
+</div>
+</div>
 """
 
 return f"""
@@ -220,70 +224,34 @@ return f"""
 <title>لوحة تحكم المدير</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
 <style>
-body {{ background: #1a1a2e; color: #fff; font-family: sans-serif; padding: 20px; }}
-.card {{ background: #16213e; border: 1px solid #0f3460; border-radius: 15px; color: #fff; }}
-.table {{ color: #fff; }}
-.table-striped>tbody>tr:nth-of-type(odd)>* {{ color: #fff; background-color: rgba(255, 255, 255, 0.05); }}
+body {{ background: #1a1a2e; color: #fff; font-family: sans-serif; padding: 15px; }}
+.card {{ background: #16213e; border-radius: 15px; }}
 </style>
 </head>
 <body>
 <div class="container-fluid">
-<div class="d-flex justify-content-between align-items-center mb-4">
-<h2>📊 لوحة إدارة الطلبات (المدير)</h2>
-<button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#settingsModal">⚙️ تغيير اسم المستخدم/كلمة السر</button>
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h3 class="mb-0">📊 لوحة الأدمن</h3>
+<span class="badge bg-primary fs-6">الطلبات: {len(apps)}</span>
 </div>
 
-<div class="card p-3 mb-4">
-<h5>إجمالي الطلبات المقدمة: <span class="badge bg-primary">{len(apps)}</span></h5>
-</div>
-
-<div class="card p-3 table-responsive">
-<table class="table table-hover align-middle">
-<thead>
-<tr>
-<th>#</th>
-<th>الاسم</th>
-<th>الهاتف</th>
-<th>الوظيفة</th>
-<th>الموقع</th>
-<th>الخبرة</th>
-<th>السيرة الذاتية</th>
-<th>إجراء</th>
-</tr>
-</thead>
-<tbody>
-{rows if rows else '<tr><td colspan="8" class="text-center text-muted">لا توجد طلبات مقدمة حالياً.</td></tr>'}
-</tbody>
-</table>
-</div>
-</div>
-
-<div class="modal fade" id="settingsModal" tabindex="-1">
-<div class="modal-dialog">
-<div class="modal-content bg-dark text-white">
-<div class="modal-header border-secondary">
-<h5 class="modal-title">تغيير بيانات دخول الأدمن</h5>
-<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-</div>
+<!-- قسم تعديل كلمة السر والمستخدم مخصص للهاتف -->
+<div class="card p-3 mb-4 border-warning">
+<h5 class="text-warning mb-3">⚙️ تغيير بيانات دخول الأدمن</h5>
 <form action="/admin/change-credentials" method="post">
-<div class="modal-body">
-<div class="mb-3">
-<label class="form-label">اسم المستخدم الجديد</label>
-<input type="text" name="new_username" class="form-control" required placeholder="مثال: admin">
+<div class="mb-2">
+<input type="text" name="new_username" class="form-control bg-dark text-white border-secondary" required placeholder="اسم المستخدم الجديد">
 </div>
 <div class="mb-3">
-<label class="form-label">كلمة السر الجديدة</label>
-<input type="password" name="new_password" class="form-control" required placeholder="أدخل كلمة سر قوية">
+<input type="password" name="new_password" class="form-control bg-dark text-white border-secondary" required placeholder="كلمة السر الجديدة">
 </div>
-</div>
-<div class="modal-footer border-secondary">
-<button type="submit" class="btn btn-success">حفظ التغييرات</button>
-</div>
+<button type="submit" class="btn btn-warning w-100 fw-bold">حفظ البيانات الجديدة</button>
 </form>
 </div>
-</div>
-</div>
 
+<h4 class="mb-3">📋 المتقدمون للوظائف</h4>
+{cards if cards else '<div class="alert alert-secondary text-center">لا توجد طلبات مقدمة حالياً.</div>'}
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
@@ -303,7 +271,7 @@ cursor = conn.cursor()
 cursor.execute('DELETE FROM applications WHERE id = ?', (app_id,))
 conn.commit()
 conn.close()
-return RedirectResponse(url="/admin")
+return RedirectResponse(url="/admin", status_code=303)
 
 @app.post("/admin/change-credentials")
 async def change_credentials(
@@ -317,8 +285,15 @@ cursor.execute('UPDATE admin_config SET username = ?, password = ? WHERE id = 1'
 conn.commit()
 conn.close()
 return HTMLResponse("""
-<script>
-alert("تم تغيير بيانات الأدمن بنجاح! يرجى إعادة تسجيل الدخول بالبيانات الجديدة.");
-window.location.href = "/admin";
-</script>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head>
+<body class="bg-dark text-white text-center p-5">
+<div class="container mt-5">
+<h3 class="text-success mb-3">✓ تم تغيير بيانات الدخول بنجاح!</h3>
+<p>يرجى تسجيل الدخول بالاسم وكلمة المرور الجديدة.</p>
+<a href="/admin" class="btn btn-warning mt-3 px-4">الذهاب لوحة التحكم</a>
+</div>
+</body>
+</html>
 """)
